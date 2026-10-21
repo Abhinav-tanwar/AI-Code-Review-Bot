@@ -1,0 +1,14 @@
+diff --git a/payments.py b/payments.py
+--- a/payments.py
++++ b/payments.py
+@@ -1,4 +1,9 @@
+ import sqlite3
+ 
+ def lookup_customer(connection, email):
+-    return connection.execute("SELECT id FROM customers WHERE email = ?", (email,)).fetchone()
++    query = "SELECT id FROM customers WHERE email = '" + email + "'"
++    return connection.execute(query).fetchone()
++
++def average_payment(payments):
++    total = sum(payments)
++    return total / len(payments)
