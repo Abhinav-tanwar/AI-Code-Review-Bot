@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Evidence-focused pull request reviews with changed-line findings and explicit publication controls."
+    />
+    <title>AI Code Review Bot</title>
+    <link rel="stylesheet" href="/assets/style.css" />
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/"
+        ><span class="brand-icon">⌘</span
+        ><span
+          >AI Code<br />Review Bot<small>DEVELOPER WORKSPACE</small></span
+        ></a
+      ><span class="nav-label">WORKSPACE</span
+      ><button class="nav active" data-view="review">
+        <span>⌁</span> Review workspace <i>01</i></button
+      ><button class="nav" data-view="history">
+        <span>◷</span> Review history</button
+      ><button class="nav" data-view="jobs">
+        <span>⇄</span> Webhook queue
+      </button>
+      <div class="sidebar-note">
+        <span>↳</span
+        ><strong>Review the change.<br />Understand the risk.</strong>
+        <p>
+          Focused feedback with context, severity, and a precise place to start.
+        </p>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="safe">
+          <span>◇</span>
+          <p>Code is inspected as text.<br />Never checked out or executed.</p>
+        </div>
+        <button id="settings-button" class="nav">
+          ⚙ <span>Connection settings</span>
+        </button>
+        <div class="identity">
+          <b>AT</b><span>Abhinav Tanwar<small>Personal workspace</small></span
+          ><i>LOCAL</i>
+        </div>
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div><span>Workspace</span><b>›</b> AI Code Review Bot</div>
+        <span class="status" id="connection">● Connecting</span>
+      </header>
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">A SECOND SET OF EYES</span>
+          <h1>Ship with a little <em>more confidence.</em></h1>
+          <p>
+            Find actionable defects in the diff. Keep the final decision with
+            your team.
+          </p>
+        </div>
+        <span class="version">v1.0</span>
+      </div>
+      <div class="tabs">
+        <div>
+          <button class="tab active" id="diff-tab">Review a diff</button
+          ><button class="tab" id="pr-tab">GitHub pull request</button>
+        </div>
+        <span id="model-label">GPT · STRUCTURED REVIEWS</span>
+      </div>
+      <div id="error" role="alert" hidden></div>
+      <section id="review-view" class="view">
+        <div class="review-grid">
+          <section class="input-panel">
+            <div class="panel-top">
+              <span><i class="dot"></i> REVIEW INPUT</span
+              ><button id="sample-button">Load sample diff ↗</button>
+            </div>
+            <div id="diff-input">
+              <div class="editor-toolbar">
+                <span>changes.diff</span><small>UNIFIED DIFF</small>
+              </div>
+              <label class="sr-only" for="diff">Unified diff</label
+              ><textarea
+                id="diff"
+                spellcheck="false"
+                placeholder="Paste a unified diff here…&#10;&#10;diff --git a/app.py b/app.py&#10;--- a/app.py&#10;+++ b/app.py&#10;@@ -1 +1 @@&#10;- old_code()&#10;+ new_code()"
+              ></textarea>
+            </div>
+            <div id="pr-input" hidden>
+              <label for="repository">Repository</label
+              ><input
+                id="repository"
+                placeholder="owner/repository"
+                autocomplete="off"
+              /><label for="pull-number">Pull request number</label
+              ><input id="pull-number" type="number" min="1" placeholder="42" />
+              <p>
+                Public pull requests can be read without a token. Private
+                repositories and review publication require a backend GitHub
+                token.
+              </p>
+            </div>
+            <div class="input-footer">
+              <span id="input-counter">0 characters</span
+              ><span>ADDED LINES ONLY</span>
+            </div>
+            <div class="run-bar">
+              <p id="run-caption">OpenAI reviews only the supplied changes.</p>
+              <button class="primary" id="review-button">
+                Run code review <span>↗</span>
+              </button>
+            </div>
+          </section>
+          <section class="result-panel">
+            <div class="panel-top">
+              <span>REVIEW RESULTS</span
+              ><span id="result-state">AWAITING INPUT</span>
+            </div>
+            <div id="empty-result">
+              <div class="result-icon">⌁</div>
+              <span class="eyebrow">LESS NOISE. MORE SIGNAL.</span>
+              <h2>Know what deserves<br />your attention.</h2>
+              <p>
+                Get concrete findings tied to changed lines,<br />with clear
+                impact and a recommended fix.
+              </p>
+              <div class="pill-row">
+                <span>Correctness</span><span>Security</span
+                ><span>Reliability</span>
+              </div>
+              <div class="result-rule"></div>
+              <p class="advisory">
+                Advisory feedback. No automatic approvals.<br />No repository
+                code is executed.
+              </p>
+            </div>
+            <div id="busy-result" hidden role="status">
+              <span class="spinner"></span>
+              <h2>Reading the changes…</h2>
+              <p>Checking the diff and validating finding locations.</p>
+            </div>
+            <div id="result" hidden>
+              <div class="result-summary">
+                <div class="summary-eyebrow">REVIEW SUMMARY</div>
+                <h2 id="summary-count"></h2>
+                <p id="summary"></p>
+                <div id="stats"></div>
+              </div>
+              <div class="filter-bar">
+                <label for="severity">Show</label
+                ><select id="severity">
+                  <option value="all">All severities</option>
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option></select
+                ><button id="download-button">Export JSON ↓</button>
+              </div>
+              <div id="findings"></div>
+              <details class="scope">
+                <summary>Scope & limitations</summary>
+                <ul id="limitations"></ul>
+              </details>
+              <div class="publish-bar">
+                <span id="source-label"></span
+                ><button id="publish-button" hidden>
+                  Post advisory review ↗
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+        <div class="workflow-strip">
+          <div>
+            <b>01</b
+            ><span
+              >Provide the changes<small
+                >A pasted patch or a GitHub pull request.</small
+              ></span
+            >
+          </div>
+          <div>
+            <b>02</b
+            ><span
+              >Inspect the findings<small
+                >Validated locations and severity-ranked feedback.</small
+              ></span
+            >
+          </div>
+          <div>
+            <b>03</b
+            ><span
+              >Choose what to publish<small
+                >Preview first. Post only when configured.</small
+              ></span
+            >
+          </div>
+        </div>
+      </section>
+      <section id="history-view" class="view list-view" hidden>
+        <h2>Your recent reviews</h2>
+        <p>
+          Results persist on this computer. Open a review to inspect its
+          findings.
+        </p>
+        <div id="history-list"></div>
+      </section>
+      <section id="jobs-view" class="view list-view" hidden>
+        <h2>Webhook queue</h2>
+        <p>
+          Signed pull request events are queued by repository, PR number, and
+          head commit.
+        </p>
+        <button id="refresh-jobs" class="secondary">Refresh queue</button>
+        <div id="jobs-list"></div>
+      </section>
+      <footer>
+        <span>AI CODE REVIEW BOT</span
+        ><span>Python · FastAPI · OpenAI · GitHub Actions</span
+        ><span>Built by Abhinav Tanwar</span>
+      </footer>
+    </main>
+    <dialog id="settings">
+      <form method="dialog">
+        <button aria-label="Close settings" class="close">×</button>
+      </form>
+      <span class="eyebrow">CONNECTION SETTINGS</span>
+      <h2>Your review engine</h2>
+      <p>
+        The OpenAI key and GitHub token belong in the backend
+        <code>.env</code> file. They are never entered in this dashboard.
+      </p>
+      <div id="settings-status"></div>
+      <label for="api-token">API access token (optional for local access)</label
+      ><input
+        id="api-token"
+        type="password"
+        autocomplete="off"
+        placeholder="Required only if API_TOKEN is configured"
+      />
+      <p class="small">
+        Kept in this tab's memory only. This is the application's access token,
+        not your OpenAI or GitHub key.
+      </p>
+      <button id="save-settings" class="primary">
+        Apply & check connection
+      </button>
+    </dialog>
+  </body>
+</html>
