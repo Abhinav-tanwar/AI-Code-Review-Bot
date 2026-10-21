@@ -1,0 +1,12 @@
+services:
+  review-bot:
+    build: .
+    ports:
+      - "127.0.0.1:8020:8020"
+    env_file: .env
+    environment:
+      DATA_DIR: /app/data
+    volumes:
+      - review-data:/app/data
+volumes:
+  review-data:
